@@ -79,4 +79,4 @@ def ussd_gateway():
 
 if __name__ == '__main__':
     # Running on port 3000 to match your Ngrok/Localhost setups
-    app.run(port=3000, debug=True)
+    app.run(port=5000, debug=True)
