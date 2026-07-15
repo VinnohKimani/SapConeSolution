@@ -1,23 +1,30 @@
 # LastMile: Delivery Layer for Humanitarian Cash Assistance
 
-This subsystem implements the isolated **Universal USSD Wallet Access (Pillar 3)** for the SAPCONE LastMile delivery platform. It functions as a lightweight, state-driven gateway mapping basic feature phone sessions directly to verification mechanisms using an Africa's Talking integration profile.
+This repository contains the isolated **Universal USSD Wallet Access (Pillar 3)** prototype for the SAPCONE LastMile delivery platform. Built during the Phase 1 Studio Build, this microservice acts as a lightweight, state-driven gateway that bridges rural feature phones with the central backend using Africa's Talking.
 
-## Core Flow Mechanism
-1. **Dial:** Participant/Proxy dials the custom assigned USSD string (`*483*700#`).
-2. **Identify:** User supplies their unique, non-PII `Reference ID`.
-3. **Verify:** User verifies the transaction by entering the system-generated `OTP` sent to the registered mobile number (enforcing caller ID cross-verification).
-4. **Trigger:** The application executes validation and triggers back-end handlers for Stellar/Soroban asset swapping and local mobile money (M-Pesa) off-ramping.
+## Current Implementation Progress
+* **Language & Framework:** Built using Python 3 and the Flask framework to manage asynchronous USSD webhooks cleanly.
+* **Environment Management:** Utilizes `pipenv` for isolated virtual environment package containment and deterministic builds (replacing raw `requirements.txt`).
+* **Authentication Logic:** Implements the streamlined **Reference ID + Transaction OTP** authentication state machine, removing local participant PIN registration complexity in the field.
+* **Network Exposure:** Leverages an `ngrok` secure tunnel to expose local execution blocks on port `3000` to remote telecom gateway aggregators.
 
 ---
 
-## Local Development & Sandboxing
+## Testing Environment Specifications
 
-### Prerequisites
-* Python 3.8+
-* [Ngrok](https://ngrok.com/) account (for web-hook exposure)
-* Africa's Talking Sandbox Account
+### Registered Sandbox Channels
+The gateway routing rules are actively mapped to the following Africa's Talking service codes:
+* `*384*25423#` (Primary Testing Code)
+* `*384*74779#`
 
-### 1. Installation
-Install the gateway framework dependencies:
+### Current Webhook Endpoint
+* **Callback URL:** `https://ebf9-197-248-238-33.ngrok-free.app/ussd`
+
+---
+
+## Local Development Execution
+
+### 1. Fire Up the Virtual Environment Shell
+Ensure you are inside the managed pipenv directory context before running scripts:
 ```bash
-pip install -r requirements.txt
+pipenv shell
