@@ -14,11 +14,11 @@ This repository contains the isolated **Universal USSD Wallet Access (Pillar 3)*
 
 ### Registered Sandbox Channels
 The gateway routing rules are actively mapped to the following Africa's Talking service codes:
-* `*384*25423#` (Primary Testing Code)
-* `*384*74779#`
+* `*384*18374#` (Primary Testing Code)
+
 
 ### Current Webhook Endpoint
-* **Callback URL:** `https://ebf9-197-248-238-33.ngrok-free.app/ussd`
+* **Callback URL:** `https://2db6-197-248-238-33.ngrok-free.app`
 
 ---
 
