@@ -1,49 +1,71 @@
 import os
 import africastalking
+from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 
-# Load credentials from .env
-load_dotenv()
+# Force load_dotenv to look specifically in this folder's .env file
+current_dir = os.path.dirname(os.path.abspath(__file__))
+dotenv_path = os.path.join(current_dir, '.env')
+load_dotenv(dotenv_path=dotenv_path)
 
-# Initialize Africa's Talking SDK for sandbox environment
-africastalking.initialize(
-    username="sandbox", # Hardcoded for sandbox environment testing
-    api_key=os.getenv('AT_API_KEY')
-)
-sms = africastalking.SMS
+# Extract and aggressively strip whitespace/newlines from variables
+username = os.getenv("AT_USERNAME", "sandbox").strip()
+api_key = os.getenv("AT_API_KEY", "").strip()
+
+# Print diagnostic info to help debug auth issues
+print("\n🔍 --- DIAGNOSTIC CHECK ---")
+print(f"Loaded Username: '{username}'")
+print(f"Loaded API Key: '{api_key[:12]}...[HIDDEN]... (Length: {len(api_key)})'")
+print("---------------------------\n")
+
+# Define the global Flask variable so 'flask run' can find it!
+app = Flask(__name__)
+
+# Initialize Africa's Talking SDK
+try:
+    africastalking.initialize(
+        username=username,
+        api_key=api_key
+    )
+    sms = africastalking.SMS
+except Exception as init_err:
+    print(f"⚠️ Initialization Error: {init_err}")
 
 def dispatch_alert(phone_number, message):
     """Sends immediate outbound notifications to passive actors."""
     try:
-        # sender_id is optional/ignored in sandbox but required for production shortcodes
         response = sms.send(message, [phone_number])
         print(f"📡 Dispatched Alert to {phone_number} successfully.")
         print(f"📊 SDK Response: {response}\n")
+        return response
     except Exception as e:
-        print(f"❌ Failed to dispatch notification text: {e}")
+        print(f"❌ Failed to dispatch: {e}")
+        return None
 
-if __name__ == '__main__':
-    # Add a mock phone number with its country code (e.g., "+2547XXXXXXXX")
-    mock_proxy = "+254700000001"
-    mock_participant = "+254700000002"
+# --- Flask Endpoints ---
+
+@app.route('/trigger-alert', methods=['POST'])
+def trigger_alert():
+    """
+    Expects POST request with JSON:
+    {
+       "phone": "+254700000001",
+       "message": "SAPCONE LastMile Notification..."
+    }
+    """
+    data = request.get_json() or {}
+    phone = data.get('phone')
+    message = data.get('message')
     
-    print("--- Running LastMile Passive SMS Automation Tests ---\n")
-    
-    # Sequence A: Countdown Milestone Reminders (Sent to Proxy)
-    days_left = [3, 2, 0]
-    for day in days_left:
-        timing = f"in {day} days" if day > 0 else "TODAY"
-        reminder = f"SAPCONE LastMile: Allocation distribution scheduled {timing}. Prepare to locate assigned nomadic clusters."
-        print(f"Simulating T-{day} Milestone Trigger...")
-        dispatch_alert(mock_proxy, reminder)
+    if not phone or not message:
+        return jsonify({"error": "Missing 'phone' or 'message' parameters"}), 400
         
-    # Sequence B: SDP Deposit Notification with OTP
-    # Dropped securely to participant, or proxy if participant has no mobile device
-    target_device = mock_participant 
-    ref_id = "LM-TURK-9821"
-    secure_otp = "5831" # Generated cryptographically by backend / smart contract escrow
-    
-    deposit_alert = f"SAPCONE LastMile: Deposit Confirmed! Ref ID: {ref_id}. Your secret authorization PIN is {secure_otp}. Keep this confidential until cash handover."
-    
-    print("Simulating SDP Secure Deposit & Transaction Event Key drop...")
-    dispatch_alert(target_device, deposit_alert)
+    result = dispatch_alert(phone, message)
+    if result:
+        return jsonify({"status": "success", "sdk_response": result}), 200
+    else:
+        return jsonify({"status": "failed", "error": "Delivery failed. Check server logs."}), 500
+
+# To run directly with: python notifications.py
+if __name__ == '__main__':
+    app.run(debug=True, port=5001)
